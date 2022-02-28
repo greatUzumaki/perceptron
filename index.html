@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Lab0</title>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+    />
+  </head>
+
+  <body>
+    <section id="main" class="main">
+      <div class="buttons">
+        <button id="predict" class="btn btn-success" disabled>Угадать</button>
+        <div class="save_or_load">
+          <button id="correct_cross" class="btn" disabled>Крест</button>
+          <button id="correct_other" class="btn" disabled>Круг</button>
+        </div>
+        <button id="init" class="btn train">Инициализировать веса</button>
+
+        <div class="save_or_load">
+          <button id="save" class="btn train">Сохранить веса</button>
+          <input type="file" accept=".txt" id="load" style="display: none" />
+          <label class="btn file" for="load">Загрузить веса</label>
+        </div>
+
+        <input
+          type="file"
+          accept=".png"
+          id="dataset"
+          multiple
+          style="display: none"
+        />
+        <label class="btn file" for="dataset">Загрузить датасет</label>
+        <button id="map" class="btn">Карта весов</button>
+
+        <button id="clear" class="btn btn-danger">Сбросить</button>
+      </div>
+    </section>
+  </body>
+</html>
