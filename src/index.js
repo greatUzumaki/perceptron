@@ -36,9 +36,9 @@ loader.instantiate(fetch('./build/optimized.wasm')).then(({ exports }) => {
     // Создание поля
     createCanvas() {
       this.canvas.id = 'canvas';
-      this.canvas.width = parseInt(this.canvasSize);
-      this.canvas.height = parseInt(this.canvasSize);
-      this.canvas.style.zIndex = 8;
+      this.canvas.width = this.canvasSize;
+      this.canvas.height = this.canvasSize;
+      this.canvas.style.zIndex = '8';
       this.canvas.style.border = '1px solid';
       this.ctx.fillStyle = this.#currentBg;
       this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -47,6 +47,7 @@ loader.instantiate(fetch('./build/optimized.wasm')).then(({ exports }) => {
 
     // Очистка поля
     clear() {
+      this.ctx.fillStyle = this.#currentBg;
       this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
@@ -68,6 +69,43 @@ loader.instantiate(fetch('./build/optimized.wasm')).then(({ exports }) => {
 
       __unpin(pixelArr);
       __unpin(vectorArr);
+    }
+
+    // Перемешать массив
+    #shuffle(arr = []) {
+      let newArr = [];
+
+      for (let i = arr.length - 1; i >= 0; i--) {
+        let id = Math.floor(Math.random() * arr.length);
+        newArr.push(arr[id]);
+        arr.splice(id, 1);
+      }
+
+      return newArr;
+    }
+
+    // Загрузить датасет
+    loadDataset(e) {
+      let files = e.target.files;
+      files = Object.values(files);
+
+      files = this.#shuffle(files);
+
+      files.forEach((file) => {
+        const reader = new FileReader();
+        let fileName = file.name;
+
+        reader.onload = (e) => {
+          let img = new Image();
+          img.onload = () => {
+            this.canvas.width = img.width;
+            this.canvas.height = img.height;
+            this.ctx.drawImage(img, 0, 0);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
     }
 
     // Позиция мыши
@@ -193,7 +231,7 @@ loader.instantiate(fetch('./build/optimized.wasm')).then(({ exports }) => {
 
   document
     .getElementById('dataset')
-    .addEventListener('change', (e) => loadDataset(e));
+    .addEventListener('change', (e) => canva.loadDataset(e));
 
   //   correct_cross.addEventListener('click', () => reTrain(true));
   //   correct_other.addEventListener('click', () => reTrain(false));
