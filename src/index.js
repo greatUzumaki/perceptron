@@ -71,6 +71,10 @@ loader.instantiate(fetch('./build/optimized.wasm')).then(({ exports }) => {
       __unpin(vectorArr);
     }
 
+    get get_vectors() {
+      return this.vectors;
+    }
+
     // Перемешать массив
     #shuffle(arr = []) {
       let newArr = [];
@@ -140,6 +144,7 @@ loader.instantiate(fetch('./build/optimized.wasm')).then(({ exports }) => {
     // Кнопку мыши отпустили
     mouseup() {
       this.#isMouseDown = false;
+      predictBtn.disabled = false;
     }
   }
 
@@ -148,15 +153,16 @@ loader.instantiate(fetch('./build/optimized.wasm')).then(({ exports }) => {
 
     // Инициализация весов
     initWeights() {
-      const arr = __getArray(__pin(InitWeight(canva.canvasSize)));
-      this.weights = arr;
+      for (let i = 0; i < 10; i++) {
+        const arr = __getArray(__pin(InitWeight(canva.canvasSize)));
+        this.weights.push(arr);
+        __unpin(arr);
+      }
 
       console.log('Инициализированные веса:');
       console.log(this.weights);
 
       initBtn.disabled = true;
-
-      __unpin(arr);
     }
 
     // Загрузка весов из файла
@@ -172,11 +178,22 @@ loader.instantiate(fetch('./build/optimized.wasm')).then(({ exports }) => {
 
         res = res.split(',');
         res = res.map((e) => Number(e));
+        let result = [];
+        let index = 0;
+        let endIndex = canva.canvasSize * canva.canvasSize;
 
-        this.weights = res;
+        for (let i = 0; i < 10; i++) {
+          let substr = res.slice(index, endIndex);
+          result.push(substr);
+
+          index = endIndex;
+          endIndex = endIndex + canva.canvasSize * canva.canvasSize;
+        }
+
+        this.weights = result;
 
         console.log('Загруженные веса:');
-        console.log(res);
+        console.log(result);
       };
 
       reader.onerror = function () {
@@ -203,9 +220,12 @@ loader.instantiate(fetch('./build/optimized.wasm')).then(({ exports }) => {
   const canva = new Canvas();
   const weight = new Weight();
 
+  function PredictFunc() {
+    canva.getVectors();
+    console.log(canva.get_vectors);
+  }
+
   // Кнопки
-  const correct_cross = document.getElementById('correct_cross');
-  const correct_other = document.getElementById('correct_other');
   const predictBtn = document.getElementById('predict');
   const initBtn = document.getElementById('init');
 
@@ -233,7 +253,5 @@ loader.instantiate(fetch('./build/optimized.wasm')).then(({ exports }) => {
     .getElementById('dataset')
     .addEventListener('change', (e) => canva.loadDataset(e));
 
-  //   correct_cross.addEventListener('click', () => reTrain(true));
-  //   correct_other.addEventListener('click', () => reTrain(false));
-  //   predictBtn.addEventListener('click', () => PredictFunc(false));
+  predictBtn.addEventListener('click', () => PredictFunc(false));
 });
