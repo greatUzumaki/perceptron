@@ -4,6 +4,7 @@
 export const Int32Array_ID = idof<Int32Array>();
 export const Int32Array_ID2 = idof<Int32Array>();
 export const Float64Array_ID = idof<Float64Array>();
+export const Float32Array_ID = idof<Float32Array>();
 
 // Создание пустого массива
 export function getClearArray(canvasSize: i32): Int32Array {
@@ -41,51 +42,62 @@ export function toImage(data: Int32Array, canvasSize: i32): Int32Array {
 }
 
 // Инициализация весов
-export function InitWeight(canvasSize: i32): Float64Array {
-  const weights = new Float64Array(canvasSize * canvasSize);
+export function InitWeight(canvasSize: i32): Float32Array {
+  const weights = new Float32Array(canvasSize * canvasSize);
 
   for (let i = 0, arrLen = weights.length; i < arrLen; i++) {
-    weights[i] =
-      Math.round((Math.random() * (0.31 + 0.31) - 0.31) * 1000) / 1000; // [-0.3; 0.3]
+    weights[i] = (Math.round((Math.random() * (0.31 + 0.31) - 0.31) * 1000) /
+      1000) as f32; // [-0.3; 0.3]
     if (weights[i] === -0) weights[i] = 0;
   }
 
   return weights;
 }
 
-// Угадывание
-export function Predict(weights: Float64Array, vectors: Int32Array): f64 {
-  let sum: f64 = 0;
-  for (let i = 0, arrLen = weights.length; i < arrLen; i++) {
-    sum += vectors[i] * weights[i];
-  }
-
-  return sum;
+// вычисление сигмоиды
+function sigmoid(sum: f32): f64 {
+  return 1 / (1 + Math.exp(-sum));
 }
 
-const cross_value = 0.95;
-const other_value = 0.1;
+// Угадывание
+export function Predict(weight: Float32Array, vectors: Int32Array): f64 {
+  let sum: f32 = 0;
+  for (let i = 0, arrLen = weight.length; i < arrLen; i++) {
+    sum += (vectors[i] as f32) * weight[i];
+  }
+
+  return sigmoid(sum);
+}
+
+const positive: f32 = 0.95;
+const negative: f32 = 0.1;
+
+// производная сигмоиды
+function sigmoid_derivative(sigmoid: f32): f32 {
+  return sigmoid * (1 - sigmoid);
+}
 
 // Корректировка весов
 export function Correct(
-  weights: Float64Array,
+  weight: Float32Array,
   vectors: Int32Array,
   neuronSum: i32,
-  speedLearn: f64,
-  cross: boolean,
-  sigmoid_derivative: f64
-): Float64Array {
-  let res = new Float64Array(weights.length);
-  res = weights.slice();
+  speedLearn: f32,
+  number: bool
+): Float32Array {
+  let res = new Float32Array(weight.length);
+  res = weight.slice();
 
-  let error: f64;
+  let error: f32;
 
-  if (cross) error = neuronSum - cross_value;
-  else error = neuronSum - other_value;
+  if (number) error = (neuronSum as f32) - positive;
+  else error = (neuronSum as f32) - negative;
 
-  for (let j = 0, arrLen = weights.length; j < arrLen; j++) {
-    if (vectors[j] === 1)
-      res[j] -= 2 * speedLearn * error * sigmoid_derivative * vectors[j];
+  let sigmoidDer = sigmoid_derivative(neuronSum as f32);
+
+  for (let i = 0, arrLen = weight.length; i < arrLen; i++) {
+    if (vectors[i] === 1)
+      res[i] -= 2 * speedLearn * error * sigmoidDer * (vectors[i] as f32);
   }
 
   return res;

@@ -8,6 +8,7 @@ loader.instantiate(fetch('./build/optimized.wasm')).then(({ exports }) => {
     Int32Array_ID,
     Int32Array_ID2,
     Float64Array_ID,
+    Float32Array_ID,
     InitWeight,
     Predict,
     Correct,
@@ -76,7 +77,7 @@ loader.instantiate(fetch('./build/optimized.wasm')).then(({ exports }) => {
     }
 
     // Перемешать массив
-    #shuffle(arr = []) {
+    shuffle(arr = []) {
       let newArr = [];
 
       for (let i = arr.length - 1; i >= 0; i--) {
@@ -86,30 +87,6 @@ loader.instantiate(fetch('./build/optimized.wasm')).then(({ exports }) => {
       }
 
       return newArr;
-    }
-
-    // Загрузить датасет
-    loadDataset(e) {
-      let files = e.target.files;
-      files = Object.values(files);
-
-      files = this.#shuffle(files);
-
-      files.forEach((file) => {
-        const reader = new FileReader();
-        let fileName = file.name;
-
-        reader.onload = (e) => {
-          let img = new Image();
-          img.onload = () => {
-            this.canvas.width = img.width;
-            this.canvas.height = img.height;
-            this.ctx.drawImage(img, 0, 0);
-          };
-          img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
     }
 
     // Позиция мыши
@@ -165,6 +142,10 @@ loader.instantiate(fetch('./build/optimized.wasm')).then(({ exports }) => {
       initBtn.disabled = true;
     }
 
+    set set_weigths(newWeights) {
+      this.weights = newWeights;
+    }
+
     // Загрузка весов из файла
     load(e) {
       const file = e.target.files[0];
@@ -217,12 +198,138 @@ loader.instantiate(fetch('./build/optimized.wasm')).then(({ exports }) => {
     }
   }
 
+  class Neuron {
+    neuronSum = [];
+    answer = 0;
+    correctAnswers = 0;
+    images = 0;
+
+    get get_neuronSum() {
+      return this.neuronSum;
+    }
+
+    set set_neuronSum(newSum) {
+      this.neuronSum = newSum;
+    }
+
+    get get_answer() {
+      return this.answer;
+    }
+
+    set set_answer(newAnsw) {
+      this.answer = newAnsw;
+    }
+
+    set set_correctAnswers(newAnsw) {
+      this.correctAnswers = newAnsw;
+    }
+
+    get get_correctAnswers() {
+      return this.correctAnswers;
+    }
+
+    set set_images(images) {
+      this.images = images;
+    }
+
+    get get_images() {
+      return this.images;
+    }
+  }
+
   const canva = new Canvas();
+  const neuron = new Neuron();
   const weight = new Weight();
 
-  function PredictFunc() {
+  function PredictFunc(auto) {
     canva.getVectors();
-    console.log(canva.get_vectors);
+    const vectors = __pin(__newArray(Int32Array_ID, canva.get_vectors));
+    let sumArr = [];
+
+    for (let i = 0; i < 10; i++) {
+      const weightsArr = __pin(__newArray(Float32Array_ID, weight.weights[i]));
+      let sum = Predict(weightsArr, vectors);
+      sumArr.push(sum);
+
+      __unpin(weightsArr);
+    }
+
+    neuron.set_neuronSum = sumArr;
+    let max = Math.max(...sumArr);
+    neuron.set_answer = sumArr.indexOf(max);
+
+    !auto && alert(sumArr.indexOf(max));
+
+    __unpin(vectors);
+  }
+
+  // Загрузить датасет
+  function loadDataset(e) {
+    let files = e.target.files;
+    files = Object.values(files);
+    neuron.set_images = files.length;
+
+    files = canva.shuffle(files);
+
+    files.forEach((file) => {
+      const reader = new FileReader();
+      let fileName = file.name;
+
+      reader.onload = (e) => {
+        let img = new Image();
+        img.onload = () => {
+          canva.canvas.width = img.width;
+          canva.canvas.height = img.height;
+          canva.ctx.drawImage(img, 0, 0);
+
+          autoTrain(fileName[0]);
+          console.log(neuron.get_correctAnswers);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    predictBtn.disabled = false;
+  }
+
+  function autoTrain(fileName) {
+    PredictFunc(true);
+
+    const vectorsArr = __pin(__newArray(Int32Array_ID, canva.get_vectors));
+
+    let newWeights = [];
+    let correctNumber;
+
+    if (Number(fileName) === neuron.get_answer) {
+      correctNumber = true;
+      neuron.set_correctAnswers = neuron.get_correctAnswers + 1;
+    }
+
+    for (let i = 0; i < 10; i++) {
+      const weightArr = __pin(__newArray(Float32Array_ID, weight.weights[i]));
+
+      let newWeight = __getArray(
+        __pin(
+          Correct(
+            weightArr,
+            vectorsArr,
+            neuron.get_neuronSum[i],
+            0.05,
+            correctNumber
+          )
+        )
+      );
+
+      newWeights.push(newWeight);
+
+      __unpin(weightArr);
+      __unpin(newWeight);
+    }
+
+    weight.set_weigths = newWeights;
+
+    __unpin(vectorsArr);
   }
 
   // Кнопки
@@ -251,7 +358,7 @@ loader.instantiate(fetch('./build/optimized.wasm')).then(({ exports }) => {
 
   document
     .getElementById('dataset')
-    .addEventListener('change', (e) => canva.loadDataset(e));
+    .addEventListener('change', (e) => loadDataset(e));
 
   predictBtn.addEventListener('click', () => PredictFunc(false));
 });
