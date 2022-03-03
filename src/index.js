@@ -16,10 +16,6 @@ loader.instantiate(fetch('./build/optimized.wasm')).then(({ exports }) => {
   } = exports;
   const { __newArray, __getArray, __pin, __unpin } = exports;
 
-  // Константы и настройки
-  let neuronSum = 0; // сумма нейрона
-  let sigmoidRes = 0; // ответ сигмоиды
-
   class Canvas {
     canvas = document.createElement('canvas');
     ctx = this.canvas.getContext('2d');
@@ -264,33 +260,39 @@ loader.instantiate(fetch('./build/optimized.wasm')).then(({ exports }) => {
   }
 
   // Загрузить датасет
-  function loadDataset(e) {
+  async function loadDataset(e) {
+    predictBtn.disabled = false;
+
     let files = e.target.files;
     files = Object.values(files);
     neuron.set_images = files.length;
 
     files = canva.shuffle(files);
 
-    files.forEach((file) => {
-      const reader = new FileReader();
-      let fileName = file.name;
+    const promise = new Promise((resolve, reject) => {
+      resolve(
+        files.forEach((file) => {
+          const reader = new FileReader();
+          let fileName = file.name;
 
-      reader.onload = (e) => {
-        let img = new Image();
-        img.onload = () => {
-          canva.canvas.width = img.width;
-          canva.canvas.height = img.height;
-          canva.ctx.drawImage(img, 0, 0);
+          reader.onload = (e) => {
+            let img = new Image();
+            img.onload = () => {
+              canva.canvas.width = img.width;
+              canva.canvas.height = img.height;
+              canva.ctx.drawImage(img, 0, 0);
 
-          autoTrain(fileName[0]);
-          console.log(neuron.get_correctAnswers);
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+              autoTrain(fileName[0]);
+              console.log(neuron.get_correctAnswers);
+            };
+            img.src = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        })
+      );
     });
 
-    predictBtn.disabled = false;
+    promise.then(() => console.log('awd'));
   }
 
   function autoTrain(fileName) {
