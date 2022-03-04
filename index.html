@@ -12,13 +12,13 @@
   <body>
     <section id="main" class="main">
       <div class="buttons">
-        <button id="predict" class="btn btn-success" disabled>Угадать</button>
+        <button id="predict" class="btn btn-success">Угадать</button>
 
         <button id="init" class="btn train">Инициализировать веса</button>
 
         <div class="save_or_load">
           <button id="save" class="btn train">Сохранить веса</button>
-          <input type="file" accept=".txt" id="load" style="display: none" />
+          <input type="file" accept=".json" id="load" style="display: none" />
           <label class="btn file" for="load">Загрузить веса</label>
         </div>
 
@@ -31,6 +31,7 @@
         />
         <label class="btn file" for="dataset">Загрузить датасет</label>
         <button id="clear" class="btn btn-danger">Сбросить</button>
+        <p id="percent">0%</p>
       </div>
     </section>
   </body>

@@ -69,13 +69,13 @@ export function Predict(weight: Float32Array, vectors: Int32Array): f64 {
   return sigmoid(sum);
 }
 
-const positive: f32 = 0.95;
-const negative: f32 = 0.1;
-
 // производная сигмоиды
 function sigmoid_derivative(sigmoid: f32): f32 {
   return sigmoid * (1 - sigmoid);
 }
+
+const positive: f32 = 0.95;
+const negative: f32 = 0.1;
 
 // Корректировка весов
 export function Correct(
@@ -85,19 +85,17 @@ export function Correct(
   speedLearn: f32,
   number: bool
 ): Float32Array {
-  let res = new Float32Array(weight.length);
-  res = weight.slice();
+  let res: Float32Array = weight.slice();
 
   let error: f32;
 
-  if (number) error = (neuronSum as f32) - positive;
-  else error = (neuronSum as f32) - negative;
+  if (number) error = 1;
+  else error = -1;
 
   let sigmoidDer = sigmoid_derivative(neuronSum as f32);
 
   for (let i = 0, arrLen = weight.length; i < arrLen; i++) {
-    if (vectors[i] === 1)
-      res[i] -= 2 * speedLearn * error * sigmoidDer * (vectors[i] as f32);
+    if (vectors[i] === 1) res[i] = weight[i] + speedLearn * error;
   }
 
   return res;

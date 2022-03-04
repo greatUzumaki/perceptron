@@ -5316,13 +5316,6 @@
   i32.const 0
   i32.store
   global.get $~lib/memory/__stack_pointer
-  i32.const 0
-  local.get $0
-  call $~lib/typedarray/Float32Array#get:length
-  call $~lib/typedarray/Float32Array#constructor
-  local.tee $5
-  i32.store
-  global.get $~lib/memory/__stack_pointer
   local.get $0
   i32.const 0
   global.get $~lib/builtins/i32.MAX_VALUE
@@ -5331,16 +5324,10 @@
   i32.store
   local.get $4
   if
-   local.get $2
-   f32.convert_i32_s
-   global.get $assembly/index/positive
-   f32.sub
+   f32.const 1
    local.set $6
   else
-   local.get $2
-   f32.convert_i32_s
-   global.get $assembly/index/negative
-   f32.sub
+   f32.const -1
    local.set $6
   end
   local.get $2
@@ -5367,22 +5354,13 @@
     if
      local.get $5
      local.get $8
-     local.get $5
+     local.get $0
      local.get $8
      call $~lib/typedarray/Float32Array#__get
-     f32.const 2
      local.get $3
-     f32.mul
      local.get $6
      f32.mul
-     local.get $7
-     f32.mul
-     local.get $1
-     local.get $8
-     call $~lib/typedarray/Int32Array#__get
-     f32.convert_i32_s
-     f32.mul
-     f32.sub
+     f32.add
      call $~lib/typedarray/Float32Array#__set
     end
     local.get $8
