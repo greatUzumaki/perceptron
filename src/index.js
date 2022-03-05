@@ -3,11 +3,11 @@ import { Canvas } from './canvas';
 import './style.scss';
 
 const imagesCount = 10;
+
 const canvas = new Canvas();
 const neuron = new Neuron(canvas.canvasSize, imagesCount, 0.01, 0.1);
 
-let percentP = document.getElementById('percent');
-
+// Загрузка датасета
 async function loadDataset(e) {
   let files = e.target.files;
   files = Object.values(files);
@@ -69,9 +69,12 @@ canvas.canvas.addEventListener('mousedown', (event) => canvas.mousedown(event));
 canvas.canvas.addEventListener('mousemove', (event) => canvas.mousemove(event));
 canvas.canvas.addEventListener('mouseup', () => canvas.mouseup());
 
+// Кнопки
 let predictBtn = document.getElementById('predict');
 predictBtn.addEventListener('click', () => {
-  console.log(neuron.Predict(canvas.getVectors()));
+  const vectors = neuron.Predict(canvas.getVectors());
+  const max = Math.max(...vectors);
+  alert(vectors.indexOf(max));
 });
 
 let initWeightsBtn = document.getElementById('init');
