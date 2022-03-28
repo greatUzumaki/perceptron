@@ -1,14 +1,19 @@
 import { Neuron } from './neuron';
 import { Canvas } from './canvas';
+var _ = require('lodash');
 import './style.scss';
+
+const speedLearn = 0.3;
 
 const imagesCount = 10;
 
 const canvas = new Canvas();
-const neuron = new Neuron(canvas.canvasSize, imagesCount, 0.01, 0.1);
+const neuron = new Neuron(canvas.canvasSize, imagesCount, speedLearn);
 
 // Загрузка датасета
 async function loadDataset(e) {
+  let time = performance.now();
+
   let files = e.target.files;
   files = Object.values(files);
 
@@ -51,17 +56,36 @@ async function loadDataset(e) {
   let percentCorrect = 0;
   let prevPercent = 0;
   let errorRepeat = 0;
+
+  let epoch = 0;
+
   do {
-    percentCorrect = neuron.TrainDataset(vectorsAndAnswer);
-    if (percentCorrect.toFixed(2) == percentCorrect.toFixed(2)) {
+    percentCorrect = neuron.TrainDataset(_.shuffle(vectorsAndAnswer));
+
+    if (percentCorrect.toFixed(2) == prevPercent.toFixed(2)) {
       errorRepeat++;
     } else {
       errorRepeat = 0;
     }
+
+    epoch++;
+
     console.log(percentCorrect);
     prevPercent = percentCorrect;
-  } while (percentCorrect < 90 && errorRepeat <= 500);
+  } while (percentCorrect < 100);
+
+  const getSeconds = () => {
+    let res = (performance.now() - time) / 1000;
+    return Number(res.toFixed(3));
+  };
+
   console.log('finish');
+  console.table([
+    ['Прошло эпох', epoch],
+    ['Всего образов', vectorsAndAnswer.length],
+    ['Всего ошибок', neuron.errors],
+    ['Прошло времени', getSeconds()],
+  ]);
 }
 
 // Рисование

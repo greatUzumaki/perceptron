@@ -1,9 +1,10 @@
 export class Neuron {
   weights = [];
-  thresholdError = 0;
   speedLearn = 0;
+  errors = 0;
+  correctCount = 0;
 
-  constructor(imagesRes, neuronNumber, thresholdError, speedLearn) {
+  constructor(imagesRes, neuronNumber, speedLearn) {
     for (let i = 0; i < neuronNumber; i++) {
       let weightNeuron = [];
       for (let j = 0; j < imagesRes * imagesRes; j++) {
@@ -13,18 +14,12 @@ export class Neuron {
       this.weights.push(weightNeuron);
     }
 
-    this.thresholdError = thresholdError;
     this.speedLearn = speedLearn;
   }
 
   // вычисление сигмоиды
   $sigmoid(sum) {
     return 1 / (1 + Math.exp(-sum));
-  }
-
-  // производная сигмоиды
-  $sigmoid_derivative(sigmoid) {
-    return sigmoid * (1 - sigmoid);
   }
 
   Predict(vector) {
@@ -48,53 +43,41 @@ export class Neuron {
 
   Train(vector, correctAnswers) {
     let answer = this.Predict(vector);
+    if (
+      answer.indexOf(Math.max(...answer)) ===
+        correctAnswers.indexOf(Math.max(...correctAnswers)) &&
+      Math.max(...answer) > 0.98
+    )
+      this.correctCount++;
+    else {
+      for (let i = 0, neuronLen = this.weights.length; i < neuronLen; i++) {
+        let weightsDelta = correctAnswers[i] - answer[i];
 
-    for (let i = 0, neuronLen = this.weights.length; i < neuronLen; i++) {
-      let error = Math.pow(answer[i] - correctAnswers[i], 2); // Квадратичное отклонение
-      let weightsDelta = 0;
-
-      if (error > this.thresholdError)
-        weightsDelta =
-          -2 *
-          this.speedLearn *
-          (answer[i] - correctAnswers[i]) *
-          this.$sigmoid_derivative(answer[i]);
-      else continue;
-
-      for (
-        let j = 0, weightsLen = this.weights[i].length;
-        j < weightsLen;
-        j++
-      ) {
-        if (vector[j] === 1) {
-          this.weights[i][j] += weightsDelta;
+        for (
+          let j = 0, weightsLen = this.weights[i].length;
+          j < weightsLen;
+          j++
+        ) {
+          if (vector[j] === 1) {
+            this.weights[i][j] += this.speedLearn * weightsDelta * vector[j];
+          }
         }
       }
     }
   }
 
   TrainDataset(vectorsAndAnswers) {
+    this.correctCount = 0;
+
     for (let i = 0, arrLen = vectorsAndAnswers.length; i < arrLen; i++) {
       this.Train(vectorsAndAnswers[i].vector, vectorsAndAnswers[i].answer);
     }
 
-    let correctCount = 0;
+    this.errors += vectorsAndAnswers.length - this.correctCount;
 
-    for (let i = 0, arrLen = vectorsAndAnswers.length; i < arrLen; i++) {
-      let neuronOutput = this.Predict(vectorsAndAnswers[i].vector);
+    console.log(vectorsAndAnswers.length - this.correctCount + ' ошибок');
 
-      let sumError = 0;
-      for (let j = 0, outputLen = neuronOutput.length; j < outputLen; j++) {
-        const error = Math.pow(
-          neuronOutput[j] - vectorsAndAnswers[i].answer[j],
-          2
-        );
-        sumError += error;
-      }
-      if (sumError < this.thresholdError) correctCount++;
-    }
-
-    let correctPercent = (correctCount / vectorsAndAnswers.length) * 100;
+    let correctPercent = (this.correctCount / vectorsAndAnswers.length) * 100;
 
     return correctPercent;
   }
