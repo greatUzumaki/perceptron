@@ -4,11 +4,17 @@ var _ = require('lodash');
 import './style.scss';
 
 const speedLearn = 0.3;
+const threshold = 0.01;
 
 const imagesCount = 10;
 
 const canvas = new Canvas();
-const neuron = new Neuron(canvas.canvasSize, imagesCount, speedLearn);
+const neuron = new Neuron(
+  canvas.canvasSize,
+  imagesCount,
+  threshold,
+  speedLearn
+);
 
 // Загрузка датасета
 async function loadDataset(e) {
